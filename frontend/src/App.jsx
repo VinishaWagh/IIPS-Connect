@@ -1,9 +1,10 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import LandingPage from './pages/LandingPage'
 import Login from "./pages/Login";
 import Feed from "./pages/Feed";
 import Signup from "./pages/Signup";
 import ProtectedRoute from "./components/ProtectedRoute";
-import AdminPanel from "./pages/Adminpanel";
+import AdminPanel from "./pages/AdminPanel";
 import MyPosts from "./pages/MyPosts";
 import SavedPosts from "./pages/SavedPosts";
 import AlumniMentorship from "./pages/AlumniMentorship";
@@ -11,15 +12,11 @@ import Notifications from "./pages/Notifications";
 import ProfileSettings from "./pages/ProfileSettings";
 import PendingRequests from "./pages/PendingRequests";
 
-function Home() {
-  return <h2>Welcome to IIPS Community</h2>;
-}
-
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route
