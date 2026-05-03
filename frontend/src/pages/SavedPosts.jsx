@@ -65,6 +65,7 @@ export default function SavedPosts() {
 
       <div className="page-root">
         <header className="topbar">
+          <TopProgressBar loading={loading} />
           <div className="topbar-logo" onClick={() => navigate("/feed")}>
             <img src={logo} alt="IIPS Connect" />
             <span>IIPS Connect</span>
@@ -79,8 +80,9 @@ export default function SavedPosts() {
           </div>
 
           {loading
-            ? <p className="empty">Loading...</p>
-            : posts.length === 0
+            ? (
+            <PostsPageSkeleton/>
+            ) : posts.length === 0
               ? <p className="empty">No saved posts yet. Save posts from the feed!</p>
               : posts.map(post => (
                   <div key={post.id} className="post-card">

@@ -84,6 +84,7 @@ export default function MyPosts() {
 
       <div className="page-root">
         <header className="topbar">
+          <TopProgressBar loading={loading} />
           <div className="topbar-logo" onClick={() => navigate("/feed")}>
             <img src={logo} alt="IIPS Connect" />
             <span>IIPS Connect</span>
@@ -98,7 +99,7 @@ export default function MyPosts() {
           </div>
 
           {loading
-            ? <p className="empty">Loading...</p>
+            ? <PostsPageSkeleton />
             : posts.length === 0
               ? <p className="empty">You haven't posted anything yet.</p>
               : posts.map(post => (

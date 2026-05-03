@@ -86,6 +86,7 @@ export default function Notifications() {
 
       <div className="page-root">
         <header className="topbar">
+          <TopProgressBar loading={loading} />
           <div className="topbar-logo" onClick={() => navigate("/feed")}>
             <img src={logo} alt="IIPS Connect" />
             <span>IIPS Connect</span>
@@ -114,7 +115,7 @@ export default function Notifications() {
           </div>
 
           {loading
-            ? <p className="empty">Loading notifications...</p>
+            ? <NotificationsSkeleton />
             : notifications.length === 0
               ? <p className="empty">No notifications yet. Start engaging with posts!</p>
               : notifications.map(n => (

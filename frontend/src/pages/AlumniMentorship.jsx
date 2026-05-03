@@ -69,6 +69,7 @@ export default function AlumniMentorship() {
 
       <div className="page-root">
         <header className="topbar">
+          <TopProgressBar loading={loading} />
           <div className="topbar-logo" onClick={() => navigate("/feed")}>
             <img src={logo} alt="IIPS Connect" />
             <span>IIPS Connect</span>
@@ -90,9 +91,7 @@ export default function AlumniMentorship() {
           />
 
           {loading
-            ? <p className="empty">Loading alumni...</p>
-            : filtered.length === 0
-              ? <p className="empty">No alumni found.</p>
+            ? <MentorshipSkeleton />
               : (
                 <div className="grid">
                   {filtered.map((a, i) => (

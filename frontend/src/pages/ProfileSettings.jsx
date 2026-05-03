@@ -4,12 +4,34 @@ import API from "../api/api";
 import logo from "../assets/IIPS_Connect_logo.png";
 
 function getInitials(name = "") {
-  return name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "??";
+  return (
+    name
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "??"
+  );
 }
 
 function Avatar({ initials, size = 40, bg = "#1e3a5f" }) {
   return (
-    <div style={{ width: size, height: size, borderRadius: "50%", background: bg, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: size * 0.35, flexShrink: 0, fontFamily: "'Nunito', sans-serif" }}>
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        background: bg,
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: 800,
+        fontSize: size * 0.35,
+        flexShrink: 0,
+        fontFamily: "'Nunito', sans-serif",
+      }}
+    >
       {initials}
     </div>
   );
@@ -22,6 +44,7 @@ export default function ProfileSettings() {
   const [email, setEmail] = useState("");
   const [profileMsg, setProfileMsg] = useState({ text: "", type: "" });
   const [profileLoading, setProfileLoading] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -34,12 +57,13 @@ export default function ProfileSettings() {
   /* GET PROFILE — GET /api/users/profile */
   useEffect(() => {
     API.get("/users/profile")
-      .then(r => {
+      .then((r) => {
         setUser(r.data);
         setName(r.data.name);
         setEmail(r.data.email);
       })
-      .catch(() => navigate("/login"));
+      .catch(() => navigate("/login"))
+      .finally(() => setLoadingProfile(false));
   }, []);
 
   /* UPDATE PROFILE — PUT /api/users/profile  body: { name, email } */
@@ -55,7 +79,10 @@ export default function ProfileSettings() {
       setUser(res.data);
       setProfileMsg({ text: "Profile updated successfully!", type: "success" });
     } catch (err) {
-      setProfileMsg({ text: err.response?.data?.message || "Failed to update profile.", type: "error" });
+      setProfileMsg({
+        text: err.response?.data?.message || "Failed to update profile.",
+        type: "error",
+      });
     } finally {
       setProfileLoading(false);
     }
@@ -73,7 +100,10 @@ export default function ProfileSettings() {
       return;
     }
     if (newPassword.length < 6) {
-      setPwMsg({ text: "New password must be at least 6 characters.", type: "error" });
+      setPwMsg({
+        text: "New password must be at least 6 characters.",
+        type: "error",
+      });
       return;
     }
     setPwLoading(true);
@@ -84,7 +114,10 @@ export default function ProfileSettings() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
-      setPwMsg({ text: err.response?.data?.message || "Failed to update password.", type: "error" });
+      setPwMsg({
+        text: err.response?.data?.message || "Failed to update password.",
+        type: "error",
+      });
     } finally {
       setPwLoading(false);
     }
@@ -97,7 +130,7 @@ export default function ProfileSettings() {
 
   const ROLE_MAP = {
     faculty: { bg: "#dbeafe", color: "#1d4ed8", text: "Faculty" },
-    alumni:  { bg: "#fef3c7", color: "#b45309", text: "Alumni" },
+    alumni: { bg: "#fef3c7", color: "#b45309", text: "Alumni" },
     student: { bg: "#dcfce7", color: "#15803d", text: "Student" },
   };
   const roleStyle = ROLE_MAP[user?.role?.toLowerCase()] || ROLE_MAP.student;
@@ -151,115 +184,232 @@ export default function ProfileSettings() {
 
       <div className="page-root">
         <header className="topbar">
+          <TopProgressBar loading={loadingProfile} />
           <div className="topbar-logo" onClick={() => navigate("/feed")}>
             <img src={logo} alt="IIPS Connect" />
             <span>IIPS Connect</span>
           </div>
-          <button className="back-btn" onClick={() => navigate("/feed")}>← Back to Feed</button>
+          <button className="back-btn" onClick={() => navigate("/feed")}>
+            ← Back to Feed
+          </button>
         </header>
 
         <div className="body">
-          <div className="page-title">Profile Settings</div>
+          {loadingProfile ? (
+            <ProfileSkeleton />
+          ) : (
+            <>
+              <div className="page-title">Profile Settings</div>
 
-          {/* Profile Header */}
-          {user && (
-            <div className="profile-header">
-              <Avatar initials={getInitials(user.name)} size={60} />
-              <div className="profile-info">
-                <div className="profile-info-name">{user.name}</div>
-                <div className="profile-info-email">{user.email}</div>
-                <span className="role-badge" style={{ background: roleStyle.bg, color: roleStyle.color }}>
-                  {roleStyle.text}
-                </span>
-                <div className="joined-text">
-                  Joined {new Date(user.created_at).toLocaleDateString("en-IN", { month: "long", year: "numeric" })}
+              {/* Profile Header */}
+              {user && (
+                <div className="profile-header">
+                  <Avatar initials={getInitials(user.name)} size={60} />
+                  <div className="profile-info">
+                    <div className="profile-info-name">{user.name}</div>
+                    <div className="profile-info-email">{user.email}</div>
+                    <span
+                      className="role-badge"
+                      style={{
+                        background: roleStyle.bg,
+                        color: roleStyle.color,
+                      }}
+                    >
+                      {roleStyle.text}
+                    </span>
+                    <div className="joined-text">
+                      Joined{" "}
+                      {new Date(user.created_at).toLocaleDateString("en-IN", {
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </div>
+                  </div>
+                  <button className="logout-btn" onClick={handleLogout}>
+                    🚪 Logout
+                  </button>
                 </div>
+              )}
+
+              {/* Edit Profile */}
+              <div className="form-card">
+                <div className="card-title">Edit Profile</div>
+                <form
+                  onSubmit={handleProfileSave}
+                  style={{ display: "flex", flexDirection: "column", gap: 14 }}
+                >
+                  <div className="form-group">
+                    <label className="form-label">Full Name</label>
+                    <input
+                      className="form-input"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Your full name"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Email Address</label>
+                    <input
+                      className="form-input"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Your email"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Role</label>
+                    {/* Role is not editable — set at signup */}
+                    <input
+                      className="form-input"
+                      type="text"
+                      value={user?.role || ""}
+                      disabled
+                    />
+                  </div>
+                  {profileMsg.text && (
+                    <div className={`msg ${profileMsg.type}`}>
+                      {profileMsg.text}
+                    </div>
+                  )}
+                  <button
+                    className="save-btn"
+                    type="submit"
+                    disabled={profileLoading}
+                  >
+                    {profileLoading ? "Saving..." : "Save Changes"}
+                  </button>
+                </form>
               </div>
-              <button className="logout-btn" onClick={handleLogout}>🚪 Logout</button>
-            </div>
+
+              {/* Change Password */}
+              <div className="form-card">
+                <div className="card-title">Change Password</div>
+                <form
+                  onSubmit={handlePasswordSave}
+                  style={{ display: "flex", flexDirection: "column", gap: 14 }}
+                >
+                  <div className="form-group">
+                    <label className="form-label">Current Password</label>
+                    <div className="pw-wrap">
+                      <input
+                        className="form-input"
+                        type={showCurrent ? "text" : "password"}
+                        placeholder="Enter current password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="eye-btn"
+                        onClick={() => setShowCurrent((p) => !p)}
+                      >
+                        {showCurrent ? (
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        ) : (
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
+                            <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
+                            <line x1="1" y1="1" x2="23" y2="23" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">New Password</label>
+                    <div className="pw-wrap">
+                      <input
+                        className="form-input"
+                        type={showNew ? "text" : "password"}
+                        placeholder="Enter new password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="eye-btn"
+                        onClick={() => setShowNew((p) => !p)}
+                      >
+                        {showNew ? (
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        ) : (
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
+                            <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
+                            <line x1="1" y1="1" x2="23" y2="23" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Confirm New Password</label>
+                    <input
+                      className="form-input"
+                      type="password"
+                      placeholder="Confirm new password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                  </div>
+                  {pwMsg.text && (
+                    <div className={`msg ${pwMsg.type}`}>{pwMsg.text}</div>
+                  )}
+                  <button
+                    className="save-btn"
+                    type="submit"
+                    disabled={pwLoading}
+                  >
+                    {pwLoading ? "Updating..." : "Update Password"}
+                  </button>
+                </form>
+              </div>
+            </>
           )}
-
-          {/* Edit Profile */}
-          <div className="form-card">
-            <div className="card-title">Edit Profile</div>
-            <form onSubmit={handleProfileSave} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div className="form-group">
-                <label className="form-label">Full Name</label>
-                <input className="form-input" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Your full name" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Email Address</label>
-                <input className="form-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Your email" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Role</label>
-                {/* Role is not editable — set at signup */}
-                <input className="form-input" type="text" value={user?.role || ""} disabled />
-              </div>
-              {profileMsg.text && <div className={`msg ${profileMsg.type}`}>{profileMsg.text}</div>}
-              <button className="save-btn" type="submit" disabled={profileLoading}>
-                {profileLoading ? "Saving..." : "Save Changes"}
-              </button>
-            </form>
-          </div>
-
-          {/* Change Password */}
-          <div className="form-card">
-            <div className="card-title">Change Password</div>
-            <form onSubmit={handlePasswordSave} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div className="form-group">
-                <label className="form-label">Current Password</label>
-                <div className="pw-wrap">
-                  <input
-                    className="form-input"
-                    type={showCurrent ? "text" : "password"}
-                    placeholder="Enter current password"
-                    value={currentPassword}
-                    onChange={e => setCurrentPassword(e.target.value)}
-                  />
-                  <button type="button" className="eye-btn" onClick={() => setShowCurrent(p => !p)}>
-                    {showCurrent
-                      ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                      : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                    }
-                  </button>
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">New Password</label>
-                <div className="pw-wrap">
-                  <input
-                    className="form-input"
-                    type={showNew ? "text" : "password"}
-                    placeholder="Enter new password"
-                    value={newPassword}
-                    onChange={e => setNewPassword(e.target.value)}
-                  />
-                  <button type="button" className="eye-btn" onClick={() => setShowNew(p => !p)}>
-                    {showNew
-                      ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                      : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                    }
-                  </button>
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Confirm New Password</label>
-                <input
-                  className="form-input"
-                  type="password"
-                  placeholder="Confirm new password"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                />
-              </div>
-              {pwMsg.text && <div className={`msg ${pwMsg.type}`}>{pwMsg.text}</div>}
-              <button className="save-btn" type="submit" disabled={pwLoading}>
-                {pwLoading ? "Updating..." : "Update Password"}
-              </button>
-            </form>
-          </div>
-
         </div>
       </div>
     </>

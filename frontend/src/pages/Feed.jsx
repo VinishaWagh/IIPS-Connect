@@ -174,6 +174,32 @@ function PostCard({ post, currentUser, onLikeToggle, onDeletePost }) {
     }
   };
 
+  const handleShare = async () => {
+    const postUrl = `${window.location.origin}/feed?post=${post.id}`;
+    const shareData = {
+      title: `IIPS Connect post from ${post.name}`,
+      text: `Check out this post on IIPS Connect.`,
+      url: postUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+    } catch (err) {
+      console.warn("Web Share API failed, falling back to clipboard", err);
+    }
+
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      alert("Post link copied to clipboard.");
+    } catch (err) {
+      console.error("Failed to copy share URL", err);
+      alert("Unable to share this post right now. Please try again.");
+    }
+  };
+
   const isOwner = Boolean(
     currentUser &&
     post.user_id &&
@@ -402,10 +428,7 @@ function PostCard({ post, currentUser, onLikeToggle, onDeletePost }) {
           {loadingCmts ? "Loading..." : "Comment"}
         </button>
 
-        <button
-          className="action-btn"
-          onClick={() => navigator.clipboard.writeText(window.location.href)}
-        >
+        <button className="action-btn" onClick={handleShare}>
           <svg
             width="17"
             height="17"
@@ -534,7 +557,7 @@ export default function Feed() {
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
-    /* ── CREATE POST — POST /api/posts
+  /* ── CREATE POST — POST /api/posts
      postController.createPost — body: { content }
      returns: { id, user_id, content, created_at }
   ── */
@@ -543,10 +566,10 @@ export default function Feed() {
       alert("Please write something or attach a file");
       return;
     }
-    
+
     if (isPosting) return; // Prevent duplicate submissions
     setIsPosting(true);
-    
+
     try {
       const formData = new FormData();
       formData.append("content", newPost);
@@ -569,7 +592,10 @@ export default function Feed() {
       setAttachments([]);
     } catch (err) {
       console.error("Failed to create post", err);
-      alert("Failed to create post: " + (err.response?.data?.message || err.message));
+      alert(
+        "Failed to create post: " +
+          (err.response?.data?.message || err.message),
+      );
     } finally {
       setIsPosting(false);
     }
@@ -854,6 +880,8 @@ export default function Feed() {
       `}</style>
 
       <div className="feed-root">
+        <PageOverlay loading={loadingPosts || !currentUser} />
+        <TopProgressBar loading={loadingPosts} />
         {/* TOPBAR */}
         <header className="topbar">
           <div className="topbar-logo">
@@ -932,53 +960,60 @@ export default function Feed() {
               Fields used: name, role, email (shown as dept fallback)
           */}
           <aside className="left-sidebar">
-            <div className="profile-card">
-              <Avatar initials={userInitials} size={64} />
-              <div className="profile-name">
-                {currentUser?.name || "Loading..."}
-              </div>
-              <Badge label={currentUser?.role} />
-              {/* currentUser.email shown below name since dept isn't in your schema yet */}
-              <div className="profile-dept">{currentUser?.email}</div>
-              <div className="profile-stats">
-                <div className="stat-item">
-                  {/* posts count — filtered from loaded posts for now */}
-                  <span className="stat-num">
-                    {posts.filter((p) => p.name === currentUser?.name).length}
-                  </span>
-                  <span className="stat-label">Posts</span>
-                </div>
-                <div className="stat-item">
-                  {/* connections not in schema yet — show 0 */}
-                  <span className="stat-num">0</span>
-                  <span className="stat-label">Connections</span>
-                </div>
-              </div>
-            </div>
+            {!currentUser ? (
+              <SidebarSkeleton />
+            ) : (
+              <>
+                <div className="profile-card">
+                  <Avatar initials={userInitials} size={64} />
+                  <div className="profile-name">
+                    {currentUser?.name || "Loading..."}
+                  </div>
+                  <Badge label={currentUser?.role} />
+                  <div className="profile-dept">{currentUser?.email}</div>
 
-            <nav className="nav-card">
-              {navItems.map((item) => (
-                <button
-                  key={item.label}
-                  className={`nav-item ${activeNav === item.label ? "active" : ""}`}
-                  onClick={() => {
-                    if (item.label === "My Posts") navigate("/my-posts");
-                    else if (item.label === "Saved Posts")
-                      navigate("/saved-posts");
-                    else if (item.label === "Alumni Mentorship")
-                      navigate("/mentorship");
-                    else if (item.label === "Notifications")
-                      navigate("/notifications");
-                    else if (item.label === "Profile Settings")
-                      navigate("/profile");
-                    else setActiveNav(item.label);
-                  }}
-                >
-                  {item.icon}
-                  {item.label}
-                </button>
-              ))}
-            </nav>
+                  <div className="profile-stats">
+                    <div className="stat-item">
+                      <span className="stat-num">
+                        {
+                          posts.filter((p) => p.name === currentUser?.name)
+                            .length
+                        }
+                      </span>
+                      <span className="stat-label">Posts</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-num">0</span>
+                      <span className="stat-label">Connections</span>
+                    </div>
+                  </div>
+                </div>
+
+                <nav className="nav-card">
+                  {navItems.map((item) => (
+                    <button
+                      key={item.label}
+                      className={`nav-item ${activeNav === item.label ? "active" : ""}`}
+                      onClick={() => {
+                        if (item.label === "My Posts") navigate("/my-posts");
+                        else if (item.label === "Saved Posts")
+                          navigate("/saved-posts");
+                        else if (item.label === "Alumni Mentorship")
+                          navigate("/mentorship");
+                        else if (item.label === "Notifications")
+                          navigate("/notifications");
+                        else if (item.label === "Profile Settings")
+                          navigate("/profile");
+                        else setActiveNav(item.label);
+                      }}
+                    >
+                      {item.icon}
+                      {item.label}
+                    </button>
+                  ))}
+                </nav>
+              </>
+            )}
           </aside>
 
           {/* CENTER FEED */}
@@ -1164,7 +1199,7 @@ export default function Feed() {
             {/* Posts list — GET /api/posts */}
             {/* Posts list */}
             {loadingPosts || !currentUser ? (
-              <p className="loading-text">Loading posts...</p>
+              <FeedSkeleton />
             ) : posts.length === 0 ? (
               <p className="loading-text">
                 No posts yet. Be the first to post!
@@ -1182,145 +1217,158 @@ export default function Feed() {
           </main>
 
           <aside className="right-sidebar">
-            {/* Trending — GET /api/posts/trending */}
-            <div className="widget-card">
-              <div className="widget-title">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                  <polyline points="17 6 23 6 23 12" />
-                </svg>
-                Trending
-              </div>
-              {trending.length === 0 ? (
-                <p className="widget-empty">No trending posts yet</p>
-              ) : (
-                trending.map((t) => (
-                  <div key={t.id} className="trend-item">
-                    <span className="trend-tag">{t.name}</span>
-                    <span className="trend-count">{t.likes_count} likes</span>
+            {loadingPosts ? (
+              <RightSidebarSkeleton />
+            ) : (
+              <>
+                {/* Trending — GET /api/posts/trending */}
+                <div className="widget-card">
+                  <div className="widget-title">
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                      <polyline points="17 6 23 6 23 12" />
+                    </svg>
+                    Trending
                   </div>
-                ))
-              )}
-            </div>
+                  {trending.length === 0 ? (
+                    <p className="widget-empty">No trending posts yet</p>
+                  ) : (
+                    trending.map((t) => (
+                      <div key={t.id} className="trend-item">
+                        <span className="trend-tag">{t.name}</span>
+                        <span className="trend-count">
+                          {t.likes_count} likes
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
 
-            {/* Suggested Connections — GET /api/users/suggestions */}
-            <div className="widget-card">
-              <div className="widget-title">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="8.5" cy="7" r="4" />
-                  <line x1="20" y1="8" x2="20" y2="14" />
-                  <line x1="23" y1="11" x2="17" y2="11" />
-                </svg>
-                Suggested Connections
-              </div>
-              {suggestions.length === 0 ? (
-                <p className="widget-empty">No suggestions yet</p>
-              ) : (
-                suggestions.map((s) => (
-                  <div key={s.id} className="suggestion-item">
-                    <Avatar initials={getInitials(s.name)} size={34} />
-                    <div className="suggestion-info">
-                      <div className="suggestion-name">{s.name}</div>
-                      <div className="suggestion-sub">
-                        <Badge label={s.role} />
+                {/* Suggested Connections — GET /api/users/suggestions */}
+                <div className="widget-card">
+                  <div className="widget-title">
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="8.5" cy="7" r="4" />
+                      <line x1="20" y1="8" x2="20" y2="14" />
+                      <line x1="23" y1="11" x2="17" y2="11" />
+                    </svg>
+                    Suggested Connections
+                  </div>
+                  {suggestions.length === 0 ? (
+                    <p className="widget-empty">No suggestions yet</p>
+                  ) : (
+                    suggestions.map((s) => (
+                      <div key={s.id} className="suggestion-item">
+                        <Avatar initials={getInitials(s.name)} size={34} />
+                        <div className="suggestion-info">
+                          <div className="suggestion-name">{s.name}</div>
+                          <div className="suggestion-sub">
+                            <Badge label={s.role} />
+                          </div>
+                        </div>
+                        <ConnectButton
+                          targetUserId={s.id}
+                          currentUserId={currentUser?.id}
+                        />
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Upcoming Events — GET /api/events/upcoming */}
+                <div className="widget-card">
+                  <div className="widget-title">
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    Upcoming Events
+                  </div>
+                  {events.length === 0 ? (
+                    <p className="widget-empty">No upcoming events</p>
+                  ) : (
+                    events.map((ev) => (
+                      <div key={ev.id} className="event-item">
+                        <div
+                          className="event-dot"
+                          style={{ background: ev.color || "#3b82f6" }}
+                        />
+                        <div>
+                          <div className="event-title">{ev.title}</div>
+                          <div className="event-date">
+                            {new Date(ev.event_date).toLocaleDateString(
+                              "en-IN",
+                              {
+                                month: "short",
+                                day: "numeric",
+                              },
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Announcements — GET /api/announcements/latest */}
+                {announcement && (
+                  <div className="widget-card">
+                    <div className="widget-title">
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0" />
+                      </svg>
+                      Announcements
+                    </div>
+                    <div className="announcement-box">
+                      <div className="announcement-text">
+                        {announcement.text}
+                      </div>
+                      <div className="announcement-time">
+                        {new Date(announcement.created_at).toLocaleString()}
                       </div>
                     </div>
-                    <ConnectButton
-                      targetUserId={s.id}
-                      currentUserId={currentUser?.id}
-                    />
                   </div>
-                ))
-              )}
-            </div>
-
-            {/* Upcoming Events — GET /api/events/upcoming */}
-            <div className="widget-card">
-              <div className="widget-title">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-                Upcoming Events
-              </div>
-              {events.length === 0 ? (
-                <p className="widget-empty">No upcoming events</p>
-              ) : (
-                events.map((ev) => (
-                  <div key={ev.id} className="event-item">
-                    <div
-                      className="event-dot"
-                      style={{ background: ev.color || "#3b82f6" }}
-                    />
-                    <div>
-                      <div className="event-title">{ev.title}</div>
-                      <div className="event-date">
-                        {new Date(ev.event_date).toLocaleDateString("en-IN", {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Announcements — GET /api/announcements/latest */}
-            {announcement && (
-              <div className="widget-card">
-                <div className="widget-title">
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0" />
-                  </svg>
-                  Announcements
-                </div>
-                <div className="announcement-box">
-                  <div className="announcement-text">{announcement.text}</div>
-                  <div className="announcement-time">
-                    {new Date(announcement.created_at).toLocaleString()}
-                  </div>
-                </div>
-              </div>
+                )}
+              </>
             )}
           </aside>
         </div>
