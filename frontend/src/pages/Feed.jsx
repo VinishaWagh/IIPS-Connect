@@ -71,6 +71,162 @@ const handleLogout = () => {
   window.location.href = "/login";
 };
 
+// Missing components for loading states
+function PageOverlay({ loading }) {
+  if (!loading) return null;
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        background: "rgba(0,0,0,0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 9999,
+        color: "#fff",
+        fontSize: "18px",
+        fontWeight: "bold",
+      }}
+    >
+      Loading...
+    </div>
+  );
+}
+
+function SidebarSkeleton() {
+  return (
+    <div className="profile-card" style={{ padding: "40px 16px" }}>
+      <div
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: "50%",
+          background: "#e5e7eb",
+          marginBottom: 10,
+        }}
+      />
+      <div
+        style={{
+          height: 16,
+          background: "#e5e7eb",
+          borderRadius: 8,
+          marginBottom: 8,
+          width: "80%",
+        }}
+      />
+      <div
+        style={{
+          height: 12,
+          background: "#e5e7eb",
+          borderRadius: 6,
+          width: "60%",
+        }}
+      />
+    </div>
+  );
+}
+
+function FeedSkeleton() {
+  return Array.from({ length: 3 }).map((_, i) => (
+    <div key={i} className="post-card" style={{ padding: "20px" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 14,
+        }}
+      >
+        <div
+          style={{
+            width: 42,
+            height: 42,
+            borderRadius: "50%",
+            background: "#e5e7eb",
+          }}
+        />
+        <div>
+          <div
+            style={{
+              height: 14,
+              background: "#e5e7eb",
+              borderRadius: 7,
+              width: 120,
+              marginBottom: 4,
+            }}
+          />
+          <div
+            style={{
+              height: 12,
+              background: "#e5e7eb",
+              borderRadius: 6,
+              width: 80,
+            }}
+          />
+        </div>
+      </div>
+      <div
+        style={{
+          height: 16,
+          background: "#e5e7eb",
+          borderRadius: 8,
+          marginBottom: 8,
+          width: "100%",
+        }}
+      />
+      <div
+        style={{
+          height: 16,
+          background: "#e5e7eb",
+          borderRadius: 8,
+          width: "70%",
+        }}
+      />
+    </div>
+  ));
+}
+
+function RightSidebarSkeleton() {
+  return (
+    <div className="widget-card" style={{ padding: "16px" }}>
+      <div
+        style={{
+          height: 16,
+          background: "#e5e7eb",
+          borderRadius: 8,
+          marginBottom: 14,
+          width: "60%",
+        }}
+      />
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} style={{ marginBottom: 10 }}>
+          <div
+            style={{
+              height: 14,
+              background: "#e5e7eb",
+              borderRadius: 7,
+              width: "80%",
+              marginBottom: 4,
+            }}
+          />
+          <div
+            style={{
+              height: 12,
+              background: "#e5e7eb",
+              borderRadius: 6,
+              width: "50%",
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ─────────────────────────────────────────────────
    POST CARD
    Schema from getPosts:
@@ -78,7 +234,7 @@ const handleLogout = () => {
      post.name (author), post.likes_count,
      post.comments_count, post.is_liked
 ───────────────────────────────────────────────── */
-function PostCard({ post, currentUser, onLikeToggle, onDeletePost }) {
+function PostCard({ post, currentUser, onDeletePost }) {
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
@@ -881,7 +1037,6 @@ export default function Feed() {
 
       <div className="feed-root">
         <PageOverlay loading={loadingPosts || !currentUser} />
-        <TopProgressBar loading={loadingPosts} />
         {/* TOPBAR */}
         <header className="topbar">
           <div className="topbar-logo">
@@ -907,41 +1062,12 @@ export default function Feed() {
             <input type="text" placeholder="Search posts, people, events..." />
           </div>
           <div className="topbar-right">
-            <button className="topbar-icon-btn" aria-label="Notifications">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-            </button>
             <button
               className="topbar-icon-btn"
               onClick={() => navigate("/requests")}
               title="Connection Requests"
             >
               🤝
-            </button>
-            <button className="topbar-icon-btn" aria-label="Messages">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
             </button>
             <button className="topbar-icon-btn" onClick={handleLogout}>
               <Avatar initials={userInitials} size={36} />

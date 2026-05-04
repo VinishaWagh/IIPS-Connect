@@ -374,7 +374,7 @@ function Signup() {
                   <option value="" disabled>Select your role</option>
                   <option value="student">Student</option>
                   <option value="faculty">Faculty</option>
-                  <option value="admin">Admin</option>
+                  <option value="alumni">Alumni</option>
                 </select>
                 <span className="select-arrow">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

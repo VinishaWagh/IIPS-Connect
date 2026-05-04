@@ -81,3 +81,6 @@ app.use("/api/connections", require("./routes/connectionRoutes"));
 
 //Attachments
 app.use("/uploads", express.static("uploads"));
+
+// Mentorship Operations
+app.use("/api/mentorship", require("./routes/mentorshipRoutes"));

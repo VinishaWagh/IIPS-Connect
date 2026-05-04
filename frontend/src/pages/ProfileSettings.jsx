@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/api";
 import logo from "../assets/IIPS_Connect_logo.png";
+import { TopProgressBar, ProfileSkeleton } from "../components/PageLoaders";
 
 function getInitials(name = "") {
   return (

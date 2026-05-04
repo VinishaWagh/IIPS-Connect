@@ -75,3 +75,44 @@ exports.getAlumni = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+//get Mentor's
+exports.getMentors = async (req, res) => {
+  try {
+    const viewerRole = req.user.role;
+
+    let query;
+    // Students see both faculty and alumni as mentors
+    // Alumni see only faculty as mentors
+    if (viewerRole === "student") {
+      query = await pool.query(
+        `SELECT id, name, email, role, created_at 
+         FROM users 
+         WHERE role IN ('alumni', 'faculty') AND id != $1
+         ORDER BY role, name`,
+        [req.user.id]
+      );
+    } else if (viewerRole === "alumni") {
+      query = await pool.query(
+        `SELECT id, name, email, role, created_at 
+         FROM users 
+         WHERE role = 'faculty' AND id != $1
+         ORDER BY name`,
+        [req.user.id]
+      );
+    } else {
+      // Faculty viewing — show all other faculty and alumni
+      query = await pool.query(
+        `SELECT id, name, email, role, created_at 
+         FROM users 
+         WHERE role IN ('alumni', 'faculty') AND id != $1
+         ORDER BY role, name`,
+        [req.user.id]
+      );
+    }
+
+    res.json(query.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

@@ -27,13 +27,62 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/admin" element={<AdminPanel />} />
-        <Route path="/my-posts" element={<MyPosts />} />
-        <Route path="/saved-posts" element={<SavedPosts />} />
-        <Route path="/mentorship" element={<AlumniMentorship />} />
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/profile" element={<ProfileSettings />} />
-        <Route path="/requests" element={<PendingRequests />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminPanel />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-posts"
+          element={
+            <ProtectedRoute>
+              <MyPosts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/saved-posts"
+          element={
+            <ProtectedRoute>
+              <SavedPosts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mentorship"
+          element={
+            <ProtectedRoute>
+              <AlumniMentorship />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <Notifications />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfileSettings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/requests"
+          element={
+            <ProtectedRoute>
+              <PendingRequests />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
