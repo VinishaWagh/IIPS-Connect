@@ -1,5 +1,6 @@
 const pool = require("../config/db");
 
+// get upcoming events
 exports.getUpcomingEvents = async (req, res) => {
   try {
     const events = await pool.query(
@@ -14,6 +15,8 @@ exports.getUpcomingEvents = async (req, res) => {
   }
 };
 
+
+// create an event (only by faculty)
 exports.createEvent = async (req, res) => {
   try {
     const { title, event_date, color } = req.body;
@@ -36,5 +39,34 @@ exports.deleteEvent = async (req, res) => {
     res.json({ message: "Event deleted." });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+//get Event
+exports.getEventById = async(req, res) => {
+
+  try{
+
+    const { id } = req.params;
+
+    const event = await pool.query(
+      "SELECT * FROM events WHERE id = $1",
+      [id]
+    );
+
+    if(event.rows.length === 0){
+      return res.status(404).json({
+        message: "Event not found"
+      });
+    }
+
+    res.json(event.rows[0]);
+
+  } catch(error){
+
+    res.status(500).json({
+      error: error.message
+    });
+
   }
 };

@@ -1,29 +1,31 @@
 import React, { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { Leapfrog } from 'ldrs/react'
-import 'ldrs/react/Leapfrog.css'
+import { Leapfrog } from "ldrs/react";
+import "ldrs/react/Leapfrog.css";
 
 /**
- * A centered wrapper for the Leapfrog loader 
+ * A centered wrapper for the Leapfrog loader
  * to be shown during route transitions.
  */
 const FullPageLoader = () => (
-  <div style={{
-    position: "fixed",
-    inset: 0,
-    zIndex: 9999,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(249,250,251,0.94)",
-  }}>
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      zIndex: 9999,
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "rgba(249,250,251,0.94)",
+    }}
+  >
     <Leapfrog size={45} speed={3.5} color="#1e3a5f" />
   </div>
 );
 
 // Lazy load your pages
-const LandingPage = lazy(() => import('./pages/LandingPage'));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
@@ -36,6 +38,8 @@ const AlumniMentorship = lazy(() => import("./pages/AlumniMentorship"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
 const PendingRequests = lazy(() => import("./pages/PendingRequests"));
+const EventDetails = lazy(() => import("./pages/EventDetails"));
+const AnnouncementDetails = lazy(() => import("./pages/AnnouncementDetails"));
 
 function App() {
   return (
@@ -51,6 +55,23 @@ function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Protected Routes */}
+          <Route
+            path="/events/:id"
+            element={
+              <ProtectedRoute>
+                <EventDetails />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/announcements/:id"
+            element={
+              <ProtectedRoute>
+                <AnnouncementDetails />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/feed"
             element={

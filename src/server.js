@@ -84,3 +84,6 @@ app.use("/uploads", express.static("uploads"));
 
 // Mentorship Operations
 app.use("/api/mentorship", require("./routes/mentorshipRoutes"));
+
+// Search 
+app.use("/api/search", require("./routes/searchRoutes"));

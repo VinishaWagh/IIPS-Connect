@@ -660,6 +660,10 @@ export default function Feed() {
   const [events, setEvents] = useState([]);
   const [announcement, setAnnouncement] = useState(null);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState(null);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+
   const [attachments, setAttachments] = useState([]);
   const fileInputRef = useRef(null);
   const [activeAttachType, setActiveAttachType] = useState(null);
@@ -777,6 +781,25 @@ export default function Feed() {
     }
   };
 
+  // Handles Search
+
+  const handleSearch = async (value) => {
+    setSearchQuery(value);
+
+    if (!value.trim()) {
+      setSearchResults(null);
+      return;
+    }
+
+    try {
+      const res = await API.get(`/search?q=${value}`);
+
+      setSearchResults(res.data);
+      setShowSearchDropdown(true);
+    } catch (error) {
+      console.error("Search failed", error);
+    }
+  };
   const userInitials = getInitials(currentUser?.name);
 
   const navItems = [
@@ -1027,12 +1050,12 @@ export default function Feed() {
       <div className="feed-root">
         <PageOverlay loading={showLoadingPosts || !currentUser} />
         {/* TOPBAR */}
-        <header
-          className="topbar"
-          onClick={() => navigate("/")}
-          style={{ cursor: "pointer" }}
-        >
-          <div className="topbar-logo">
+        <header className="topbar">
+          <div
+            className="topbar-logo"
+            onClick={() => navigate("/")}
+            style={{ cursor: "pointer" }}
+          >
             <img src={logo} alt="IIPS Connect" />
             <span>IIPS Connect</span>
           </div>
@@ -1052,7 +1075,82 @@ export default function Feed() {
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
             </span>
-            <input type="text" placeholder="Search posts, people, events..." />
+            <input
+              type="text"
+              placeholder="Search posts, people, events..."
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              onFocus={() => setShowSearchDropdown(true)}
+            />
+            {showSearchDropdown && searchResults && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "45px",
+                  width: "100%",
+                  background: "white",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "12px",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+                  zIndex: 999,
+                  maxHeight: "400px",
+                  overflowY: "auto",
+                  padding: "10px",
+                }}
+              >
+                {/* EVENTS */}
+                {searchResults.events?.length > 0 && (
+                  <>
+                    <p style={{ fontWeight: "bold", marginBottom: "8px" }}>
+                      Events
+                    </p>
+
+                    {searchResults.events.map((event) => (
+                      <div
+                        key={event.id}
+                        style={{
+                          padding: "10px",
+                          cursor: "pointer",
+                          borderRadius: "8px",
+                        }}
+                        onClick={() => navigate(`/events/${event.id}`)}
+                      >
+                        {event.title}
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {/* ANNOUNCEMENTS */}
+                {searchResults.announcements?.length > 0 && (
+                  <>
+                    <p
+                      style={{
+                        fontWeight: "bold",
+                        marginTop: "15px",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      Announcements
+                    </p>
+
+                    {searchResults.announcements.map((a) => (
+                      <div
+                        key={a.id}
+                        style={{
+                          padding: "10px",
+                          cursor: "pointer",
+                          borderRadius: "8px",
+                        }}
+                        onClick={() => navigate(`/announcements/${a.id}`)}
+                      >
+                        {a.text.slice(0, 50)}...
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
           </div>
           <div className="topbar-right">
             <button
@@ -1437,7 +1535,12 @@ export default function Feed() {
                     <p className="widget-empty">No upcoming events</p>
                   ) : (
                     events.map((ev) => (
-                      <div key={ev.id} className="event-item">
+                      <div
+                        key={ev.id}
+                        className="event-item"
+                        onClick={() => navigate(`/events/${ev.id}`)}
+                        style={{ cursor: "pointer" }}
+                      >
                         <div
                           className="event-dot"
                           style={{ background: ev.color || "#3b82f6" }}
@@ -1477,7 +1580,13 @@ export default function Feed() {
                       </svg>
                       Announcements
                     </div>
-                    <div className="announcement-box">
+                    <div
+                      className="announcement-box"
+                      onClick={() =>
+                        navigate(`/announcements/${announcement.id}`)
+                      }
+                      style={{ cursor: "pointer" }}
+                    >
                       <div className="announcement-text">
                         {announcement.text}
                       </div>

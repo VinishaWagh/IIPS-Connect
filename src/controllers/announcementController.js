@@ -46,3 +46,32 @@ exports.getAllAnnouncements = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// get announcement by Id
+exports.getAnnouncementById = async(req, res) => {
+
+  try{
+
+    const { id } = req.params;
+
+    const announcement = await pool.query(
+      "SELECT * FROM announcements WHERE id = $1",
+      [id]
+    );
+
+    if(announcement.rows.length === 0){
+      return res.status(404).json({
+        message: "Announcement not found"
+      });
+    }
+
+    res.json(announcement.rows[0]);
+
+  } catch(error){
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+};
