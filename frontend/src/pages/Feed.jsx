@@ -663,6 +663,7 @@ export default function Feed() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState(null);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const [attachments, setAttachments] = useState([]);
   const fileInputRef = useRef(null);
@@ -788,18 +789,31 @@ export default function Feed() {
 
     if (!value.trim()) {
       setSearchResults(null);
+      setShowSearchDropdown(false);
       return;
     }
 
+    setSearchLoading(true);
+
     try {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       const res = await API.get(`/search?q=${value}`);
 
       setSearchResults(res.data);
       setShowSearchDropdown(true);
     } catch (error) {
       console.error("Search failed", error);
+    } finally {
+      setSearchLoading(false);
     }
   };
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      handleSearch(searchQuery);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
   const userInitials = getInitials(currentUser?.name);
 
   const navItems = [
@@ -1033,6 +1047,16 @@ export default function Feed() {
         .connect-btn { padding: 5px 12px; border: 1.5px solid #1e3a5f; border-radius: 16px; background: none; font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700; color: #1e3a5f; cursor: pointer; white-space: nowrap; }
         .connect-btn:hover { background: #1e3a5f; color: #fff; }
 
+        /* Search loading Spinner */
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
         .event-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid #f0f2f5; }
         .event-item:last-child { border-bottom: none; }
         .event-dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
@@ -1079,10 +1103,10 @@ export default function Feed() {
               type="text"
               placeholder="Search posts, people, events..."
               value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setShowSearchDropdown(true)}
             />
-            {showSearchDropdown && searchResults && (
+            {showSearchDropdown && (
               <div
                 style={{
                   position: "absolute",
@@ -1098,55 +1122,237 @@ export default function Feed() {
                   padding: "10px",
                 }}
               >
-                {/* EVENTS */}
-                {searchResults.events?.length > 0 && (
-                  <>
-                    <p style={{ fontWeight: "bold", marginBottom: "8px" }}>
-                      Events
-                    </p>
-
-                    {searchResults.events.map((event) => (
-                      <div
-                        key={event.id}
-                        style={{
-                          padding: "10px",
-                          cursor: "pointer",
-                          borderRadius: "8px",
-                        }}
-                        onClick={() => navigate(`/events/${event.id}`)}
-                      >
-                        {event.title}
-                      </div>
-                    ))}
-                  </>
-                )}
-
-                {/* ANNOUNCEMENTS */}
-                {searchResults.announcements?.length > 0 && (
-                  <>
-                    <p
+                {searchLoading && (
+                  <div
+                    style={{
+                      padding: "14px",
+                      textAlign: "center",
+                      color: "#6b7280",
+                      fontWeight: "600",
+                    }}
+                  >
+                    <div
                       style={{
-                        fontWeight: "bold",
-                        marginTop: "15px",
-                        marginBottom: "8px",
+                        padding: "14px",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        gap: "10px",
+                        color: "#6b7280",
+                        fontWeight: "600",
                       }}
                     >
-                      Announcements
-                    </p>
-
-                    {searchResults.announcements.map((a) => (
                       <div
-                        key={a.id}
                         style={{
-                          padding: "10px",
-                          cursor: "pointer",
-                          borderRadius: "8px",
+                          width: "16px",
+                          height: "16px",
+                          border: "2px solid #d1d5db",
+                          borderTop: "2px solid #3b82f6",
+                          borderRadius: "50%",
+                          animation: "spin 0.8s linear infinite",
                         }}
-                        onClick={() => navigate(`/announcements/${a.id}`)}
-                      >
-                        {a.text.slice(0, 50)}...
-                      </div>
-                    ))}
+                      />
+                      Searching...
+                    </div>
+                  </div>
+                )}
+                {!searchLoading && searchResults && (
+                  <>
+                    {(searchResults.users?.length || 0) === 0 &&
+                      (searchResults.posts?.length || 0) === 0 &&
+                      (searchResults.events?.length || 0) === 0 &&
+                      (searchResults.announcements?.length || 0) === 0 && (
+                        <div
+                          style={{
+                            padding: "18px",
+                            textAlign: "center",
+                            color: "#9ca3af",
+                            fontWeight: "600",
+                            fontSize: "14px",
+                          }}
+                        >
+                          No results found
+                        </div>
+                      )}
+
+                    {/* USERS */}
+                    {searchResults.users?.length > 0 && (
+                      <>
+                        <p
+                          style={{
+                            fontWeight: "bold",
+                            marginBottom: "8px",
+                            color: "#374151",
+                          }}
+                        >
+                          Users
+                        </p>
+
+                        {searchResults.users.map((user) => (
+                          <div
+                            key={user.id}
+                            style={{
+                              padding: "12px 14px",
+                              cursor: "pointer",
+                              borderRadius: "10px",
+                              transition: "all 0.2s ease",
+                              marginBottom: "4px",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = "#f3f4f6";
+                              e.currentTarget.style.transform =
+                                "translateX(4px)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "transparent";
+                              e.currentTarget.style.transform =
+                                "translateX(0px)";
+                            }}
+                            onClick={() => navigate(`/profile/${user.id}`)}
+                          >
+                            <Avatar
+                              initials={getInitials(user.name)}
+                              size={34}
+                            />
+
+                            <div>
+                              <div
+                                style={{
+                                  fontWeight: "700",
+                                  color: "#1f2937",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                {user.name}
+                              </div>
+
+                              <div
+                                style={{
+                                  fontSize: "12px",
+                                  color: "#6b7280",
+                                }}
+                              >
+                                {user.role}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+
+                    {/* POSTS */}
+                    {searchResults.posts?.length > 0 && (
+                      <>
+                        <p
+                          style={{
+                            fontWeight: "bold",
+                            marginBottom: "8px",
+                            marginTop: "12px",
+                            color: "#374151",
+                          }}
+                        >
+                          Posts
+                        </p>
+
+                        {searchResults.posts.map((post) => (
+                          <div
+                            key={post.id}
+                            style={{
+                              padding: "12px 14px",
+                              cursor: "pointer",
+                              borderRadius: "10px",
+                              transition: "all 0.2s ease",
+                              marginBottom: "4px",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = "#f3f4f6";
+                              e.currentTarget.style.transform =
+                                "translateX(4px)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "transparent";
+                              e.currentTarget.style.transform =
+                                "translateX(0px)";
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "700",
+                                color: "#1f2937",
+                                fontSize: "13px",
+                                marginBottom: "3px",
+                              }}
+                            >
+                              Post
+                            </div>
+
+                            <div
+                              style={{
+                                fontSize: "13px",
+                                color: "#6b7280",
+                                lineHeight: "1.4",
+                              }}
+                            >
+                              {post.content.slice(0, 70)}...
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                    {/* EVENTS */}
+                    {searchResults.events?.length > 0 && (
+                      <>
+                        <p style={{ fontWeight: "bold", marginBottom: "8px" }}>
+                          Events
+                        </p>
+
+                        {searchResults.events.map((event) => (
+                          <div
+                            key={event.id}
+                            style={{
+                              padding: "10px",
+                              cursor: "pointer",
+                              borderRadius: "8px",
+                            }}
+                            onClick={() => navigate(`/events/${event.id}`)}
+                          >
+                            {event.title}
+                          </div>
+                        ))}
+                      </>
+                    )}
+
+                    {/* ANNOUNCEMENTS */}
+                    {searchResults.announcements?.length > 0 && (
+                      <>
+                        <p
+                          style={{
+                            fontWeight: "bold",
+                            marginTop: "15px",
+                            marginBottom: "8px",
+                          }}
+                        >
+                          Announcements
+                        </p>
+
+                        {searchResults.announcements.map((a) => (
+                          <div
+                            key={a.id}
+                            style={{
+                              padding: "10px",
+                              cursor: "pointer",
+                              borderRadius: "8px",
+                            }}
+                            onClick={() => navigate(`/announcements/${a.id}`)}
+                          >
+                            {a.text.slice(0, 50)}...
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </>
                 )}
               </div>

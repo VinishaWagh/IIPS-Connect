@@ -120,13 +120,14 @@ exports.googleCallback = async (req, res) => {
         const name = googleUser.name || "Google User";
 
         let user = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+        const isNewGoogleUser = user.rows.length === 0;
 
-        if (user.rows.length === 0) {
+        if (isNewGoogleUser) {
             const randomPassword = crypto.randomBytes(24).toString("hex");
             const hashedPassword = await bcrypt.hash(randomPassword, 10);
             const newUser = await pool.query(
                 "INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING *",
-                [name, email, hashedPassword, "member"]
+                [name, email, hashedPassword, "student"]
             );
             user = newUser;
         }
@@ -138,7 +139,9 @@ exports.googleCallback = async (req, res) => {
         );
 
         const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
-        const redirectUrl = `${clientUrl}/login?token=${encodeURIComponent(token)}`;
+        const redirectUrl = isNewGoogleUser
+            ? `${clientUrl}/role-selection?token=${encodeURIComponent(token)}`
+            : `${clientUrl}/login?token=${encodeURIComponent(token)}`;
         res.redirect(redirectUrl);
     } catch (error) {
         console.error("Google callback error:", error);

@@ -23,7 +23,20 @@ exports.getSuggestions = async (req, res) =>{
         const currentUserId = req.user.id;
 
         const users = await pool.query(
-            "SELECT id, name, role FROM users WHERE id != $1 LIMIT 5", [currentUserId]
+            `SELECT u.id, u.name, u.role 
+             FROM users u
+             WHERE u.id != $1
+             AND u.id NOT IN (
+               SELECT CASE 
+                 WHEN connections.sender_id = $1 THEN connections.receiver_id
+                 ELSE connections.sender_id 
+               END AS connected_user_id
+               FROM connections
+               WHERE (connections.sender_id = $1 OR connections.receiver_id = $1)
+               AND connections.status = 'accepted'
+             )
+             LIMIT 5`,
+            [currentUserId]
         );
 
         res.json(users.rows);
@@ -35,11 +48,37 @@ exports.getSuggestions = async (req, res) =>{
 // Update Profile
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, email } = req.body;
-    const updated = await pool.query(
-      `UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING id, name, email, role, created_at`,
-      [name, email, req.user.id]
-    );
+    const { name, email, role } = req.body;
+    
+    // Build dynamic update query
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+
+    if (name !== undefined) {
+      updates.push(`name = $${paramCount}`);
+      values.push(name);
+      paramCount++;
+    }
+    if (email !== undefined) {
+      updates.push(`email = $${paramCount}`);
+      values.push(email);
+      paramCount++;
+    }
+    if (role !== undefined) {
+      updates.push(`role = $${paramCount}`);
+      values.push(role.toLowerCase());
+      paramCount++;
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ message: "No fields to update" });
+    }
+
+    values.push(req.user.id);
+    const query = `UPDATE users SET ${updates.join(", ")} WHERE id = $${paramCount} RETURNING id, name, email, role, created_at`;
+    
+    const updated = await pool.query(query, values);
     res.json(updated.rows[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
