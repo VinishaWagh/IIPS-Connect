@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/api";
 import logo from "../assets/IIPS_Connect_logo.png";
-import { TopProgressBar, NotificationsSkeleton } from "../components/PageLoaders";
+import { FullPageLoader, TopProgressBar, NotificationsSkeleton } from "../components/PageLoaders";
 
 function getInitials(name = "") {
   return name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "??";
@@ -116,7 +116,7 @@ export default function Notifications() {
           </div>
 
           {loading
-            ? <NotificationsSkeleton />
+            ? <FullPageLoader />
             : notifications.length === 0
               ? <p className="empty">No notifications yet. Start engaging with posts!</p>
               : notifications.map(n => (

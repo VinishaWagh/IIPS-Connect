@@ -1,3 +1,29 @@
+import { Leapfrog } from 'ldrs/react'
+import 'ldrs/react/Leapfrog.css'
+
+export function FullPageLoader() {
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 9999,
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: '100%',
+      minHeight: '100vh',
+      backgroundColor: 'rgba(255,255,255,0.92)',
+      padding: '0px',
+    }}>
+      <Leapfrog size={40} speed={3} color="#1e3a5f" />
+    </div>
+  );
+}
+
+
 export function TopProgressBar({ loading }) {
   if (!loading) return null;
   return (

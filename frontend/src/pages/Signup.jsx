@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import API from "../api/api";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/IIPS_Connect_logo.png";
@@ -11,6 +11,21 @@ function Signup() {
   const [role, setRole] = useState("");
   const [showPassword] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+
+    if (token) {
+      localStorage.setItem("token", token);
+      window.history.replaceState({}, document.title, "/signup");
+      navigate("/feed");
+    }
+  }, [navigate]);
+
+  const handleGoogleSignIn = () => {
+    window.location.href = "http://localhost:5000/api/auth/google";
+  };
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -395,7 +410,7 @@ function Signup() {
             </div>
 
             <div className="social-btns">
-              <button type="button" aria-label="Sign up with Google" className="social-btn">
+              <button type="button" aria-label="Sign up with Google" className="social-btn" onClick={handleGoogleSignIn}>
                 <svg width="20" height="20" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>

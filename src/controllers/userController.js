@@ -116,3 +116,18 @@ exports.getMentors = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+//Get total connection count
+exports.getConnectionsCount = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT COUNT(*) FROM connections 
+       WHERE (sender_id = $1 OR receiver_id = $1) 
+       AND status = 'accepted'`,
+      [req.user.id]
+    );
+    res.json({ count: parseInt(result.rows[0].count) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

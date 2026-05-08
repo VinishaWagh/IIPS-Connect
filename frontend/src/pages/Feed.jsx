@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import API from "../api/api";
 import logo from "../assets/IIPS_Connect_logo.png";
 import ConnectButton from "../components/Connectbutton";
+import { FullPageLoader } from "../components/PageLoaders";
+import { useMinimumLoading } from "../hooks/useMinimumLoading";
 
 /* ─────────────────────────────────────────────────
    AVATAR & BADGE
@@ -74,27 +76,7 @@ const handleLogout = () => {
 // Missing components for loading states
 function PageOverlay({ loading }) {
   if (!loading) return null;
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        background: "rgba(0,0,0,0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9999,
-        color: "#fff",
-        fontSize: "18px",
-        fontWeight: "bold",
-      }}
-    >
-      Loading...
-    </div>
-  );
+  return <FullPageLoader />;
 }
 
 function SidebarSkeleton() {
@@ -669,7 +651,9 @@ export default function Feed() {
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState("");
   const [loadingPosts, setLoadingPosts] = useState(true);
+  const showLoadingPosts = useMinimumLoading(loadingPosts, 2500);
   const [activeNav, setActiveNav] = useState("Home Feed");
+  const [connectionsCount, setConnectionsCount] = useState(0);
 
   const [trending, setTrending] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
@@ -687,10 +671,15 @@ export default function Feed() {
   ── */
   useEffect(() => {
     setLoadingPosts(true);
-    Promise.all([API.get("/users/profile"), API.get("/posts")])
-      .then(([profileRes, postsRes]) => {
+    Promise.all([
+      API.get("/users/profile"),
+      API.get("/posts"),
+      API.get("/users/connections-count"),
+    ])
+      .then(([profileRes, postsRes, connRes]) => {
         setCurrentUser(profileRes.data);
         setPosts(postsRes.data);
+        setConnectionsCount(connRes.data.count);
       })
       .catch((err) => console.error(err))
       .finally(() => setLoadingPosts(false));
@@ -1036,9 +1025,13 @@ export default function Feed() {
       `}</style>
 
       <div className="feed-root">
-        <PageOverlay loading={loadingPosts || !currentUser} />
+        <PageOverlay loading={showLoadingPosts || !currentUser} />
         {/* TOPBAR */}
-        <header className="topbar">
+        <header
+          className="topbar"
+          onClick={() => navigate("/")}
+          style={{ cursor: "pointer" }}
+        >
           <div className="topbar-logo">
             <img src={logo} alt="IIPS Connect" />
             <span>IIPS Connect</span>
@@ -1109,7 +1102,7 @@ export default function Feed() {
                       <span className="stat-label">Posts</span>
                     </div>
                     <div className="stat-item">
-                      <span className="stat-num">0</span>
+                      <span className="stat-num">{connectionsCount}</span>
                       <span className="stat-label">Connections</span>
                     </div>
                   </div>
@@ -1324,7 +1317,7 @@ export default function Feed() {
 
             {/* Posts list — GET /api/posts */}
             {/* Posts list */}
-            {loadingPosts || !currentUser ? (
+            {showLoadingPosts || !currentUser ? (
               <FeedSkeleton />
             ) : posts.length === 0 ? (
               <p className="loading-text">
@@ -1343,7 +1336,7 @@ export default function Feed() {
           </main>
 
           <aside className="right-sidebar">
-            {loadingPosts ? (
+            {showLoadingPosts ? (
               <RightSidebarSkeleton />
             ) : (
               <>

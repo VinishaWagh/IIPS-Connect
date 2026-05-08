@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/api";
 import logo from "../assets/IIPS_Connect_logo.png";
+import { FullPageLoader } from "../components/PageLoaders";
+import { useMinimumLoading } from "../hooks/useMinimumLoading";
 
 /* ─── Helpers ─────────────────────────────────── */
 function getInitials(name = "") {
@@ -688,6 +690,7 @@ function IncomingRequests({ currentUser }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(null);
+  const showLoading = useMinimumLoading(loading, 2500);
 
   useEffect(() => {
     API.get("/mentorship/my-requests")
@@ -710,19 +713,7 @@ function IncomingRequests({ currentUser }) {
     }
   };
 
-  if (loading)
-    return (
-      <p
-        style={{
-          textAlign: "center",
-          color: "#9ca3af",
-          padding: 40,
-          fontWeight: 600,
-        }}
-      >
-        Loading requests...
-      </p>
-    );
+  if (showLoading) return <FullPageLoader />;
   if (requests.length === 0)
     return (
       <div style={{ textAlign: "center", padding: "60px 24px" }}>
@@ -903,6 +894,7 @@ function IncomingRequests({ currentUser }) {
 function SentRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const showLoading = useMinimumLoading(loading, 2500);
 
   useEffect(() => {
     API.get("/mentorship/sent")
@@ -917,19 +909,7 @@ function SentRequests() {
     rejected: { bg: "#fff1f2", color: "#e11d48", label: "✕ Declined" },
   };
 
-  if (loading)
-    return (
-      <p
-        style={{
-          textAlign: "center",
-          color: "#9ca3af",
-          padding: 40,
-          fontWeight: 600,
-        }}
-      >
-        Loading...
-      </p>
-    );
+  if (showLoading) return <FullPageLoader />;
   if (requests.length === 0)
     return (
       <div style={{ textAlign: "center", padding: "60px 24px" }}>
@@ -1010,6 +990,7 @@ export default function AlumniMentorship() {
   const [currentUser, setCurrentUser] = useState(null);
   const [alumni, setAlumni] = useState([]);
   const [loading, setLoading] = useState(true);
+  const showPageLoading = useMinimumLoading(loading, 2500);
   const [search, setSearch] = useState("");
   const [domain, setDomain] = useState("All");
   const [activeTab, setActiveTab] = useState("browse"); // "browse" | "requests" | "sent"
@@ -1059,6 +1040,8 @@ export default function AlumniMentorship() {
         { key: "browse", label: "🎓 Find a Mentor" },
         { key: "sent", label: "📤 My Requests" },
       ];
+
+  if (showPageLoading || !currentUser) return <FullPageLoader />;
 
   return (
     <>

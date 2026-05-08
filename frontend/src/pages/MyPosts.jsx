@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/api";
 import logo from "../assets/IIPS_Connect_logo.png";
-import { TopProgressBar, PostsPageSkeleton } from "../components/PageLoaders";
+import { FullPageLoader, TopProgressBar, PostsPageSkeleton } from "../components/PageLoaders";
 
 function getInitials(name = "") {
   return name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "??";
@@ -100,7 +100,7 @@ export default function MyPosts() {
           </div>
 
           {loading
-            ? <PostsPageSkeleton />
+            ? <FullPageLoader />
             : posts.length === 0
               ? <p className="empty">You haven't posted anything yet.</p>
               : posts.map(post => (
