@@ -91,6 +91,8 @@ function MentorshipStatusBtn({ alumniId, currentUser, onRequest }) {
       .catch(() => setStatus("none"));
   }, [alumniId, currentUser]);
 
+  if (currentUser?.role === "faculty") return null;
+
   if (status === "loading")
     return (
       <button
@@ -988,11 +990,12 @@ function SentRequests() {
 export default function AlumniMentorship() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
-  const [alumni, setAlumni] = useState([]);
+  const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
   const showPageLoading = useMinimumLoading(loading, 2500);
   const [search, setSearch] = useState("");
   const [domain, setDomain] = useState("All");
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeTab, setActiveTab] = useState("browse"); // "browse" | "requests" | "sent"
   const [modalAlumni, setModalAlumni] = useState(null);
   const [successMsg, setSuccessMsg] = useState("");
@@ -1005,21 +1008,49 @@ export default function AlumniMentorship() {
       })
       .catch(() => navigate("/login"));
 
-    API.get("/users/alumni")
-      .then((r) => setAlumni(r.data))
+    API.get("/users/mentors")
+      .then((r) => setMentors(r.data))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = alumni.filter((a) => {
+  const normalizedSearch = search.trim().toLowerCase();
+
+  const handleSearchChange = (value) => {
+    setSearch(value);
+    setShowSuggestions(true);
+  };
+
+  const handleSelectSuggestion = (value) => {
+    setSearch(value);
+    setShowSuggestions(false);
+  };
+
+  const filtered = mentors.filter((a) => {
+    const fields = [
+      a.name,
+      a.email,
+      a.domain,
+      a.company,
+      a.designation,
+      a.role,
+      a.bio,
+      ...(a.specializations || []),
+    ];
+
     const matchSearch =
-      a.name.toLowerCase().includes(search.toLowerCase()) ||
-      a.email.toLowerCase().includes(search.toLowerCase()) ||
-      (a.domain || "").toLowerCase().includes(search.toLowerCase()) ||
-      (a.company || "").toLowerCase().includes(search.toLowerCase());
+      normalizedSearch === "" ||
+      fields.some((field) =>
+        (field || "").toLowerCase().includes(normalizedSearch),
+      );
+
     const matchDomain = domain === "All" || a.domain === domain;
     return matchSearch && matchDomain;
   });
+
+  const suggestions = normalizedSearch
+    ? filtered.slice(0, 5)
+    : [];
 
   const handleRequestSuccess = () => {
     setModalAlumni(null);
@@ -1030,11 +1061,17 @@ export default function AlumniMentorship() {
   };
 
   const isAlumni = currentUser?.role === "alumni";
+  const isFaculty = currentUser?.role === "faculty";
 
-  const tabs = isAlumni
+  const tabs = isFaculty
     ? [
         { key: "requests", label: "📥 Incoming Requests" },
-        { key: "browse", label: "👥 Browse Alumni" },
+        { key: "browse", label: "👥 Find a Mentee" },
+      ]
+    : isAlumni
+    ? [
+        { key: "requests", label: "📥 Incoming Requests" },
+        { key: "browse", label: "👥 Browse Mentors" },
       ]
     : [
         { key: "browse", label: "🎓 Find a Mentor" },
@@ -1063,10 +1100,16 @@ export default function AlumniMentorship() {
 
         .search-filter-bar { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 16px 24px; display: flex; align-items: center; gap: 12; flex-wrap: wrap; gap: 12px; position: sticky; top: 56px; z-index: 90; }
         .search-input-wrap { flex: 1; min-width: 200px; position: relative; }
-        .search-input { width: 100%; padding: 10px 16px 10px 38px; border: 1.5px solid #e5e7eb; border-radius: 24px; font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 600; color: #1e2a3a; background: #f8f9fb; outline: none; transition: border-color 0.2s; }
+        .search-input { width: 100%; padding: 10px 16px 10px 38px; border: 1.5px solid #e5e7eb; border-radius: 24px; font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 600; color: #1e3a5f; background: #f8f9fb; outline: none; transition: border-color 0.2s; }
         .search-input:focus { border-color: #7b8fcf; background: #fff; }
         .search-input::placeholder { color: #9ca3af; }
         .search-icon-pos { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; }
+        .suggestions-panel { position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 50; background: #fff; border: 1px solid #e5e7eb; border-radius: 18px; box-shadow: 0 18px 40px rgba(15,23,42,0.12); overflow: hidden; }
+        .suggestion-item { width: 100%; text-align: left; border: none; background: transparent; padding: 14px 16px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; }
+        .suggestion-item:hover { background: #f8fafc; }
+        .suggestion-title { font-size: 14px; font-weight: 700; color: #1e3a5f; }
+        .suggestion-meta { font-size: 12px; color: #6b7280; }
+        .suggestion-none { padding: 14px 16px; font-size: 13px; color: #9ca3af; }
 
         .domain-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
         .domain-scroll::-webkit-scrollbar { display: none; }
@@ -1128,7 +1171,11 @@ export default function AlumniMentorship() {
                 lineHeight: 1.2,
               }}
             >
-              {isAlumni ? "Your Mentorship Dashboard" : "Find Your Mentor"}
+              {isFaculty
+                ? "Find Your Mentee"
+                : isAlumni
+                ? "Your Mentorship Dashboard"
+                : "Find Your Mentor"}
             </h1>
             <p
               style={{
@@ -1140,9 +1187,11 @@ export default function AlumniMentorship() {
                 fontWeight: 600,
               }}
             >
-              {isAlumni
+              {isFaculty
+                ? "Explore students and alumni who are looking for guidance and mentorship."
+                : isAlumni
                 ? "Manage incoming mentorship requests from students. Your experience shapes their future."
-                : "Connect with IIPS alumni who've been in your shoes. Get real guidance from real professionals."}
+                : "Connect with IIPS mentors who can guide your journey."}
             </p>
 
             {/* Stats row */}
@@ -1156,7 +1205,7 @@ export default function AlumniMentorship() {
               }}
             >
               {[
-                { num: alumni.length, label: "Alumni Mentors" },
+                { num: mentors.length, label: isFaculty ? "Mentees" : "Mentors" },
                 { num: "Free", label: "Always" },
                 { num: "1:1", label: "Guidance" },
               ].map((s, i) => (
@@ -1207,10 +1256,40 @@ export default function AlumniMentorship() {
               </span>
               <input
                 className="search-input"
-                placeholder="Search by name, company, or domain..."
+                placeholder={
+                  isFaculty
+                    ? "Search students or alumni..."
+                    : "Search by name, company, or domain..."
+                }
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onFocus={() => setShowSuggestions(Boolean(search.trim()))}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
               />
+              {showSuggestions && (
+                <div className="suggestions-panel">
+                  {suggestions.length > 0 ? (
+                    suggestions.map((a) => (
+                      <button
+                        key={a.id}
+                        type="button"
+                        className="suggestion-item"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => handleSelectSuggestion(a.name)}
+                      >
+                        <span className="suggestion-title">{a.name}</span>
+                        <span className="suggestion-meta">
+                          {a.company || a.domain || a.email}
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="suggestion-none">
+                      {isFaculty ? "No matching mentees" : "No matching mentors"}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="domain-scroll">
               {DOMAINS.map((d) => (
@@ -1252,8 +1331,10 @@ export default function AlumniMentorship() {
                 }}
               >
                 {loading
-                  ? "Loading alumni..."
-                  : `${filtered.length} mentor${filtered.length !== 1 ? "s" : ""} found`}
+                  ? isFaculty
+                    ? "Loading mentees..."
+                    : "Loading mentors..."
+                  : `${filtered.length} ${isFaculty ? "mentee" : "mentor"}${filtered.length !== 1 ? "s" : ""} found`}
                 {search && ` for "${search}"`}
               </div>
 
@@ -1262,7 +1343,7 @@ export default function AlumniMentorship() {
                   <div
                     style={{ fontSize: 14, color: "#9ca3af", fontWeight: 600 }}
                   >
-                    Loading alumni...
+                    {isFaculty ? "Loading mentees..." : "Loading mentors..."}
                   </div>
                 </div>
               ) : filtered.length === 0 ? (
@@ -1276,7 +1357,7 @@ export default function AlumniMentorship() {
                       marginBottom: 8,
                     }}
                   >
-                    No alumni found
+                    {isFaculty ? "No mentees found" : "No mentors found"}
                   </div>
                   <div style={{ fontSize: 13, color: "#9ca3af" }}>
                     Try adjusting your search or domain filter

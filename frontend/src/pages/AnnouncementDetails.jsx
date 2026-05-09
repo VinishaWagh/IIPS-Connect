@@ -98,10 +98,6 @@ function AnnouncementDetails() {
 
         <div className="detail-grid">
           <div className="detail-row">
-            <div className="detail-label">Announcement ID</div>
-            <div className="detail-value">{announcement.id || id}</div>
-          </div>
-          <div className="detail-row">
             <div className="detail-label">Published</div>
             <div className="detail-value">{createdAtText}</div>
           </div>

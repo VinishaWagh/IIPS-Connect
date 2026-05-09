@@ -41,6 +41,7 @@ const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
 const PendingRequests = lazy(() => import("./pages/PendingRequests"));
 const EventDetails = lazy(() => import("./pages/EventDetails"));
 const AnnouncementDetails = lazy(() => import("./pages/AnnouncementDetails"));
+const UserProfile = lazy(() => import("./pages/UserProfile"));
 
 function App() {
   return (
@@ -57,6 +58,14 @@ function App() {
           <Route path="/role-selection" element={<RoleSelection />} />
 
           {/* Protected Routes */}
+          <Route
+            path="/profile/:id"
+            element={
+              <ProtectedRoute>
+                <UserProfile />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/events/:id"
             element={

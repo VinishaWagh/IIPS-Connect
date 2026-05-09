@@ -5,6 +5,7 @@ import logo from "../assets/IIPS_Connect_logo.png";
 import ConnectButton from "../components/Connectbutton";
 import { FullPageLoader } from "../components/PageLoaders";
 import { useMinimumLoading } from "../hooks/useMinimumLoading";
+import UserProfile from "./userProfile";
 
 /* ─────────────────────────────────────────────────
    AVATAR & BADGE
@@ -226,6 +227,8 @@ function PostCard({ post, currentUser, onDeletePost }) {
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
   const [isSaved, setIsSaved] = useState(Boolean(post.is_saved));
+  const [isLiking, setIsLiking] = useState(false);
+  const isLikingRef = useRef(false);
 
   /* ── GET COMMENTS — GET /api/comments/:postId
      commentController.getComments returns:
@@ -274,13 +277,24 @@ function PostCard({ post, currentUser, onDeletePost }) {
      returns: { message: "Post liked." | "Post unliked." }
   ── */
   const handleLike = async () => {
+    if (isLikingRef.current) return;
+    isLikingRef.current = true;
+    setIsLiking(true);
+
     try {
-      await API.post(`posts/${post.id}/likes`);
-      // Optimistic update
-      setIsLiked((prev) => !prev);
-      setLikesCount((prev) => (isLiked ? prev - 1 : prev + 1));
+      const res = await API.post(`posts/${post.id}/likes`);
+      const { liked, likes_count } = res.data;
+      if (typeof likes_count === "number") {
+        setLikesCount(likes_count);
+      }
+      if (typeof liked === "boolean") {
+        setIsLiked(liked);
+      }
     } catch (err) {
       console.error("Failed to toggle like", err);
+    } finally {
+      isLikingRef.current = false;
+      setIsLiking(false);
     }
   };
 
@@ -532,8 +546,10 @@ function PostCard({ post, currentUser, onDeletePost }) {
       {/* Actions */}
       <div className="post-actions">
         <button
+          type="button"
           className={`action-btn ${isLiked ? "action-liked" : ""}`}
           onClick={handleLike}
+          disabled={isLiking}
         >
           <svg
             width="17"
@@ -887,24 +903,6 @@ export default function Feed() {
           <circle cx="9" cy="7" r="4" />
           <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
           <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-        </svg>
-      ),
-    },
-    {
-      label: "Notifications",
-      icon: (
-        <svg
-          width="17"
-          height="17"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
       ),
     },
@@ -1361,12 +1359,15 @@ export default function Feed() {
           <div className="topbar-right">
             <button
               className="topbar-icon-btn"
-              onClick={() => navigate("/requests")}
-              title="Connection Requests"
+              onClick={() => navigate("/notifications")}
+              title="NOtifications"
             >
-              🤝
+              🔔
             </button>
-            <button className="topbar-icon-btn" onClick={handleLogout}>
+            <button
+              className="topbar-icon-btn"
+              onClick={() => navigate(`/profile/${currentUser.id}`)}
+            >
               <Avatar initials={userInitials} size={36} />
             </button>
             {currentUser?.role === "faculty" && (
@@ -1423,8 +1424,6 @@ export default function Feed() {
                           navigate("/saved-posts");
                         else if (item.label === "Alumni Mentorship")
                           navigate("/mentorship");
-                        else if (item.label === "Notifications")
-                          navigate("/notifications");
                         else if (item.label === "Profile Settings")
                           navigate("/profile");
                         else setActiveNav(item.label);
