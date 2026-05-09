@@ -1,6 +1,6 @@
 import axios from "axios";
 const API = axios.create({
-    baseURL: "http://localhost:5000/api"
+    baseURL: "https://iips-connect-production.up.railway.app/api"
     
 });
 
