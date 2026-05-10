@@ -5,7 +5,7 @@ import logo from "../assets/IIPS_Connect_logo.png";
 import ConnectButton from "../components/Connectbutton";
 import { FullPageLoader } from "../components/PageLoaders";
 import { useMinimumLoading } from "../hooks/useMinimumLoading";
-import UserProfile from "./userProfile";
+import UserProfile from "./UserProfile";
 
 /* ─────────────────────────────────────────────────
    AVATAR & BADGE
