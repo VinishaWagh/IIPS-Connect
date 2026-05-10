@@ -1359,6 +1359,13 @@ export default function Feed() {
           <div className="topbar-right">
             <button
               className="topbar-icon-btn"
+              onClick={() => navigate("/requests")}
+              title="Connection Requests"
+            >
+              🤝
+            </button>
+            <button
+              className="topbar-icon-btn"
               onClick={() => navigate("/notifications")}
               title="NOtifications"
             >
