@@ -24,7 +24,7 @@ function Signup() {
   }, [navigate]);
 
   const handleGoogleSignIn = () => {
-    window.location.href = "http://localhost:5000/api/auth/google";
+    window.location.href = "https://iips-connect-production.up.railway.app/api/auth/google";
   };
 
   const handleSignup = async (e) => {
