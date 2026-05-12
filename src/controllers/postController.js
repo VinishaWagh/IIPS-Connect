@@ -1,5 +1,32 @@
 const pool = require("../config/db");
 
+const getServerRoot = (req) => {
+  const configuredRoot = process.env.SERVER_ROOT_URL;
+  if (configuredRoot) {
+    return configuredRoot.replace(/\/$/, "");
+  }
+  return `${req.protocol}://${req.get("host")}`;
+};
+
+const buildAttachmentUrl = (attachmentPath, req) => {
+  if (!attachmentPath) return "";
+
+  const root = getServerRoot(req);
+  if (attachmentPath.startsWith("http://") || attachmentPath.startsWith("https://")) {
+    try {
+      const parsed = new URL(attachmentPath);
+      if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+        return `${root}${parsed.pathname}`;
+      }
+      return attachmentPath;
+    } catch (error) {
+      return attachmentPath;
+    }
+  }
+
+  return `${root}${attachmentPath.startsWith("/") ? "" : "/"}${attachmentPath}`;
+};
+
 // Create a Post
 exports.createPost = async(req, res)=>{
     try{
@@ -21,14 +48,17 @@ exports.createPost = async(req, res)=>{
 
         // Save file attachments if any
         if(req.files && req.files.length > 0){
-            for(const file of req.files){
+                for(const file of req.files){
                 // Save file metadata to attachments table
                 const filePath = `/uploads/${file.filename}`;
                 const attachmentResult = await pool.query(
                     "INSERT INTO attachments (post_id, filename, original_name, path, mimetype, size) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
                     [postId, file.filename, file.originalname, filePath, file.mimetype, file.size]
                 );
-                attachments.push(attachmentResult.rows[0]);
+                attachments.push({
+                    ...attachmentResult.rows[0],
+                    url: buildAttachmentUrl(filePath, req),
+                });
             }
         }
 
@@ -75,7 +105,10 @@ exports.getPosts = async (req, res) => {
         if(!attachmentsByPostId[att.post_id]){
           attachmentsByPostId[att.post_id] = [];
         }
-        attachmentsByPostId[att.post_id].push(att);
+        attachmentsByPostId[att.post_id].push({
+          ...att,
+          url: buildAttachmentUrl(att.path, req),
+        });
       });
     }
     
@@ -213,7 +246,10 @@ exports.getMyPosts = async (req, res) => {
         if(!attachmentsByPostId[att.post_id]){
           attachmentsByPostId[att.post_id] = [];
         }
-        attachmentsByPostId[att.post_id].push(att);
+        attachmentsByPostId[att.post_id].push({
+          ...att,
+          url: buildAttachmentUrl(att.path, req),
+        });
       });
     }
     
@@ -290,7 +326,10 @@ exports.getSavedPosts = async (req, res) => {
         if(!attachmentsByPostId[att.post_id]){
           attachmentsByPostId[att.post_id] = [];
         }
-        attachmentsByPostId[att.post_id].push(att);
+        attachmentsByPostId[att.post_id].push({
+          ...att,
+          url: buildAttachmentUrl(att.path, req),
+        });
       });
     }
     

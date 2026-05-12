@@ -1,6 +1,7 @@
 // Imports
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 require("dotenv").config();
 
 // Server Initialization
@@ -80,7 +81,7 @@ app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/connections", require("./routes/connectionRoutes"));
 
 //Attachments
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Mentorship Operations
 app.use("/api/mentorship", require("./routes/mentorshipRoutes"));

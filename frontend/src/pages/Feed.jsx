@@ -7,6 +7,37 @@ import { FullPageLoader } from "../components/PageLoaders";
 import { useMinimumLoading } from "../hooks/useMinimumLoading";
 import UserProfile from "./UserProfile";
 
+const buildAttachmentUrl = (attachmentPath) => {
+  if (!attachmentPath) return "";
+
+  const apiBase = API.defaults.baseURL
+    ? API.defaults.baseURL.replace(/\/api\/?$/, "")
+    : window.location.origin;
+
+  if (attachmentPath.startsWith("http://") || attachmentPath.startsWith("https://")) {
+    try {
+      const parsed = new URL(attachmentPath);
+      if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+        return new URL(parsed.pathname, apiBase).toString();
+      }
+      return attachmentPath;
+    } catch (error) {
+      return attachmentPath;
+    }
+  }
+
+  const normalizedBase = apiBase.endsWith("/") ? apiBase : `${apiBase}/`;
+  const normalizedPath = attachmentPath.startsWith("/")
+    ? attachmentPath.slice(1)
+    : attachmentPath;
+
+  try {
+    return new URL(normalizedPath, normalizedBase).toString();
+  } catch (error) {
+    return `${window.location.origin}/${normalizedPath}`;
+  }
+};
+
 /* ─────────────────────────────────────────────────
    AVATAR & BADGE
 ───────────────────────────────────────────────── */
@@ -463,7 +494,7 @@ function PostCard({ post, currentUser, onDeletePost }) {
           }}
         >
           {post.attachments.map((file, i) => {
-            const url = `http://localhost:5000${file.path}`;
+            const url = buildAttachmentUrl(file.url || file.path);
             if (file.mimetype?.startsWith("image/")) {
               return (
                 <img
@@ -741,9 +772,7 @@ export default function Feed() {
       formData.append("content", newPost);
       attachments.forEach((a) => formData.append("files", a.file));
 
-      const res = await API.post("/posts", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await API.post("/posts", formData);
       const enriched = {
         ...res.data,
         name: currentUser.name,
